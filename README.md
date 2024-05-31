@@ -1,0 +1,2 @@
+# ComfyUI-EasyOCR
+ComfyUI-EasyOCR
