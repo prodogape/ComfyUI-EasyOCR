@@ -1,5 +1,6 @@
 # ComfyUI-EasyOCR
 本节点主要是基于Easy-OCR，实现OCR文本识别功能
+![image](/docs/workflow.png)
 
 # 切换语言
 - [English](README.md)

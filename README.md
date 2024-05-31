@@ -1,5 +1,6 @@
 # ComfyUI-EasyOCR
 This node is primarily based on Easy-OCR to implement OCR text recognition functionality.
+![image](/docs/workflow.png)
 
 # README
 - [English](README.md)
