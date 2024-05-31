@@ -11,12 +11,6 @@ This node is primarily based on Easy-OCR to implement OCR text recognition funct
 |------------------------------|---------------------------------------------------------------------------|
 |Apply EasyOCR                 |the OCR model will be used, and the model will be automatically downloaded.|
 
-
-
-
-
-   |
-
 # INSTALL
 This node calls the official Python package, and you also need to install the following dependencies:
 
