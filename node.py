@@ -4,9 +4,10 @@ import cv2
 import easyocr
 import os
 import logging
-from PIL import Image
 import numpy as np
 import torch
+from PIL import Image, ImageDraw, ImageFont
+
 
 logger = logging.getLogger("ComfyUI-EasyOCR")
 model_dir_name = "EasyOCR"
@@ -88,6 +89,7 @@ def get_classes2(label):
                 break
     return result
 
+
 def plot_boxes_to_image(image_pil, tgt):
     image_np = np.array(image_pil)
     H, W = tgt["size"]
@@ -96,13 +98,22 @@ def plot_boxes_to_image(image_pil, tgt):
     res_mask = []
     res_image = []
 
-    font_scale = 1
     box_color = (255, 0, 0)
     text_color = (255, 255, 255)
     image_np = image_np[..., :3]
 
     # Make a copy of the image to avoid modifying the original image
     image_with_boxes = np.copy(image_np)
+
+    # Convert the image to a PIL image for drawing text
+    image_pil = Image.fromarray(image_with_boxes)
+    draw = ImageDraw.Draw(image_pil)
+
+    # Load a TTF font file for drawing Chinese text
+    current_file_path = os.path.dirname(os.path.abspath(__file__))
+    font_path = os.path.join(current_file_path, "docs", "PingFangRegular.ttf") 
+    font_size = 20
+    font = ImageFont.truetype(font_path, font_size)
 
     labelme_data = {
         "version": "4.5.6",
@@ -143,27 +154,13 @@ def plot_boxes_to_image(image_pil, tgt):
             image_with_boxes, (int(x1), int(y1)), (int(x2), int(y2)), box_color, 3
         )
 
-        # Draw label on the copied image
-        label_size = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, font_scale, 2)[0]
-        label_ymin = max(y1, label_size[1] + 10)
-        cv2.rectangle(
-            image_with_boxes,
-            (x1, y1 - label_size[1] - 10),
-            (x1 + label_size[0], y1),
-            box_color,
-            -1,
+        # Draw label on the copied image using PIL
+        text_size = draw.textsize(label, font=font)
+        label_ymin = max(y1, text_size[1] + 10)
+        draw.rectangle(
+            [(x1, y1 - text_size[1] - 10), (x1 + text_size[0], y1)], fill=box_color
         )
-        cv2.putText(
-            image_with_boxes,
-            label,
-            (x1, y1 - 7),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            font_scale,
-            text_color,
-            2,
-            cv2.LINE_AA,
-            bottomLeftOrigin=False,
-        )
+        draw.text((x1, y1 - text_size[1] - 10), label, font=font, fill=text_color)
 
         # Draw mask
         mask = np.zeros((H, W, 1), dtype=np.uint8)
@@ -176,6 +173,9 @@ def plot_boxes_to_image(image_pil, tgt):
         mask_tensor = torch.from_numpy(mask).permute(2, 0, 1).float() / 255.0
         res_mask.append(mask_tensor)
 
+    # Convert the PIL image back to a numpy array
+    image_with_boxes = np.array(image_pil)
+
     # Convert the modified image to a torch tensor
     image_with_boxes_tensor = torch.from_numpy(
         image_with_boxes.astype(np.float32) / 255.0
@@ -184,6 +184,7 @@ def plot_boxes_to_image(image_pil, tgt):
     res_image.append(image_with_boxes_tensor)
 
     return res_image, res_mask, labelme_data
+
 
 class ApplyEasyOCR:
     @classmethod
