@@ -91,28 +91,21 @@ def get_classes2(label):
 
 
 def plot_boxes_to_image(image_pil, tgt):
-    image_np = np.array(image_pil)
     H, W = tgt["size"]
     result = tgt["result"]
 
     res_mask = []
     res_image = []
 
-    box_color = (255, 0, 0)
-    text_color = (255, 255, 255)
-    image_np = image_np[..., :3]
+    box_color = (255, 0, 0)  # Red color for the box
+    text_color = (255, 255, 255)  # White color for the text
 
-    # Make a copy of the image to avoid modifying the original image
-    image_with_boxes = np.copy(image_np)
-
-    # Convert the image to a PIL image for drawing text
-    image_pil = Image.fromarray(image_with_boxes)
     draw = ImageDraw.Draw(image_pil)
-
-    # Load a TTF font file for drawing Chinese text
+    
+    # Get the current file path and use it to create a relative path to the font file
     current_file_path = os.path.dirname(os.path.abspath(__file__))
-    font_path = os.path.join(current_file_path, "docs", "PingFangRegular.ttf") 
-    font_size = 20
+    font_path = os.path.join(current_file_path, "docs", "PingFang Regular.ttf")  # 使用相对路径
+    font_size = 20  # 可以根据需要调整字体大小
     font = ImageFont.truetype(font_path, font_size)
 
     labelme_data = {
@@ -135,7 +128,7 @@ def plot_boxes_to_image(image_pil, tgt):
         x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)
         points = [[x1, y1], [x2, y2]]
 
-        # save labelme json
+        # Save labelme json
         shape = {
             "label": label,
             "points": points,
@@ -145,21 +138,17 @@ def plot_boxes_to_image(image_pil, tgt):
         }
         labelme_data["shapes"].append(shape)
 
-        # change lable
+        # Change label
         label = label + ":" + str(threshold)
         shape["threshold"] = str(threshold)
 
-        # Draw rectangle on the copied image
-        cv2.rectangle(
-            image_with_boxes, (int(x1), int(y1)), (int(x2), int(y2)), box_color, 3
-        )
+        # Draw rectangle on the image using PIL
+        draw.rectangle([(x1, y1), (x2, y2)], outline=box_color, width=3)
 
-        # Draw label on the copied image using PIL
+        # Draw label on the image using PIL
         text_size = draw.textsize(label, font=font)
         label_ymin = max(y1, text_size[1] + 10)
-        draw.rectangle(
-            [(x1, y1 - text_size[1] - 10), (x1 + text_size[0], y1)], fill=box_color
-        )
+        draw.rectangle([(x1, y1 - text_size[1] - 10), (x1 + text_size[0], y1)], fill=box_color)
         draw.text((x1, y1 - text_size[1] - 10), label, font=font, fill=text_color)
 
         # Draw mask
@@ -177,9 +166,7 @@ def plot_boxes_to_image(image_pil, tgt):
     image_with_boxes = np.array(image_pil)
 
     # Convert the modified image to a torch tensor
-    image_with_boxes_tensor = torch.from_numpy(
-        image_with_boxes.astype(np.float32) / 255.0
-    )
+    image_with_boxes_tensor = torch.from_numpy(image_with_boxes.astype(np.float32) / 255.0)
     image_with_boxes_tensor = torch.unsqueeze(image_with_boxes_tensor, 0)
     res_image.append(image_with_boxes_tensor)
 
@@ -259,7 +246,6 @@ class ApplyEasyOCR:
                 empty_mask = torch.from_numpy(mask).permute(2, 0, 1).float() / 255.0
                 res_masks.extend(empty_mask)
 
-        print(res_labels)
         return (
             torch.cat(res_images, dim=0),
             torch.cat(res_masks, dim=0),
