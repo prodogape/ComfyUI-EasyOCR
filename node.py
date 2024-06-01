@@ -104,8 +104,8 @@ def plot_boxes_to_image(image_pil, tgt):
     
     # Get the current file path and use it to create a relative path to the font file
     current_file_path = os.path.dirname(os.path.abspath(__file__))
-    font_path = os.path.join(current_file_path, "docs", "PingFang Regular.ttf")  # 使用相对路径
-    font_size = 20  # 可以根据需要调整字体大小
+    font_path = os.path.join(current_file_path, "docs", "PingFang Regular.ttf")
+    font_size = 20 
     font = ImageFont.truetype(font_path, font_size)
 
     labelme_data = {
@@ -189,7 +189,7 @@ class ApplyEasyOCR:
                 ),
                 "language_list": (
                     get_lang_list(),
-                    {"default": "简体中文"},
+                    {"default": "English"},
                 ),
                 "language_name": (
                     "STRING",
