@@ -73,7 +73,7 @@ def get_classes(label):
     for l in labels:
         for key, value in lang_list.items():
             if l == value:
-                result.append(key)
+                result.append(value)
                 break
     return result
 
