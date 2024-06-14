@@ -1,0 +1,15 @@
+[project]
+name = "comfyui-easyocr"
+description = "This node is primarily based on Easy-OCR to implement OCR text recognition functionality."
+version = "1.0.0"
+license = "LICENSE"
+dependencies = ["easyocr"]
+
+[project.urls]
+Repository = "https://github.com/prodogape/ComfyUI-EasyOCR"
+#  Used by Comfy Registry https://comfyregistry.org
+
+[tool.comfy]
+PublisherId = ""
+DisplayName = "ComfyUI-EasyOCR"
+Icon = ""
