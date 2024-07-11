@@ -101,11 +101,11 @@ def plot_boxes_to_image(image_pil, tgt):
     text_color = (255, 255, 255)  # White color for the text
 
     draw = ImageDraw.Draw(image_pil)
-    
+
     # Get the current file path and use it to create a relative path to the font file
     current_file_path = os.path.dirname(os.path.abspath(__file__))
     font_path = os.path.join(current_file_path, "docs", "PingFang Regular.ttf")
-    font_size = 20 
+    font_size = 20
     font = ImageFont.truetype(font_path, font_size)
 
     labelme_data = {
@@ -146,10 +146,15 @@ def plot_boxes_to_image(image_pil, tgt):
         draw.rectangle([(x1, y1), (x2, y2)], outline=box_color, width=3)
 
         # Draw label on the image using PIL
-        text_size = draw.textsize(label, font=font)
-        label_ymin = max(y1, text_size[1] + 10)
-        draw.rectangle([(x1, y1 - text_size[1] - 10), (x1 + text_size[0], y1)], fill=box_color)
-        draw.text((x1, y1 - text_size[1] - 10), label, font=font, fill=text_color)
+        text_bbox = draw.textbbox((x1, y1), label, font=font)
+        text_width = text_bbox[2] - text_bbox[0]
+        text_height = text_bbox[3] - text_bbox[1]
+
+        label_ymin = max(y1, text_height + 10)
+        draw.rectangle(
+            [(x1, y1 - text_height - 10), (x1 + text_width, y1)], fill=box_color
+        )
+        draw.text((x1, y1 - text_height - 10), label, font=font, fill=text_color)
 
         # Draw mask
         mask = np.zeros((H, W, 1), dtype=np.uint8)
@@ -166,7 +171,9 @@ def plot_boxes_to_image(image_pil, tgt):
     image_with_boxes = np.array(image_pil)
 
     # Convert the modified image to a torch tensor
-    image_with_boxes_tensor = torch.from_numpy(image_with_boxes.astype(np.float32) / 255.0)
+    image_with_boxes_tensor = torch.from_numpy(
+        image_with_boxes.astype(np.float32) / 255.0
+    )
     image_with_boxes_tensor = torch.unsqueeze(image_with_boxes_tensor, 0)
     res_image.append(image_with_boxes_tensor)
 
