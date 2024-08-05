@@ -104,7 +104,7 @@ def plot_boxes_to_image(image_pil, tgt):
 
     # Get the current file path and use it to create a relative path to the font file
     current_file_path = os.path.dirname(os.path.abspath(__file__))
-    font_path = os.path.join(current_file_path, "docs", "PingFang Regular.ttf")
+    font_path = os.path.join(current_file_path, "docs", "PingFangRegular.ttf")
     font_size = 20
     font = ImageFont.truetype(font_path, font_size)
 
