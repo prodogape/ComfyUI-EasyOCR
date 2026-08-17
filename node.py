@@ -104,9 +104,14 @@ def plot_boxes_to_image(image_pil, tgt):
 
     # Get the current file path and use it to create a relative path to the font file
     current_file_path = os.path.dirname(os.path.abspath(__file__))
-    font_path = os.path.join(current_file_path, "docs", "PingFang Regular.ttf")
+    font_path = os.path.join(current_file_path, "docs", "PingFangRegular.ttf")
     font_size = 20
-    font = ImageFont.truetype(font_path, font_size)
+    try:
+        font = ImageFont.truetype(font_path, font_size)
+    except OSError:
+        # Font is only used to label the preview image; the MASK output does not
+        # depend on it. Fall back to PIL's default so the node never crashes here.
+        font = ImageFont.load_default()
 
     labelme_data = {
         "version": "4.5.6",
