@@ -263,3 +263,93 @@ class ApplyEasyOCR:
             torch.cat(res_masks, dim=0),
             res_labels,
         )
+
+
+class ApplyEasyOCRCombined:
+    """Same OCR as ApplyEasyOCR, but returns a single mask that is the
+    union (element-wise max) of all per-detection masks. Useful when you
+    want one inpaint region covering all detected text instead of N
+    separate masks stacked along the batch dimension.
+    """
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "image": ("IMAGE",),
+                "gpu": (
+                    "BOOLEAN",
+                    {"default": True},
+                ),
+                "detect": (
+                    ["choose", "input"],
+                    {"default": "choose"},
+                ),
+                "language_list": (
+                    get_lang_list(),
+                    {"default": "English"},
+                ),
+                "language_name": (
+                    "STRING",
+                    {"default": "ch_sim,en", "multiline": False},
+                ),
+            },
+        }
+
+    CATEGORY = "ComfyUI-EasyOCR"
+    FUNCTION = "main"
+    RETURN_TYPES = (
+        "IMAGE",
+        "MASK",
+        "JSON",
+    )
+
+    def main(self, image, gpu, detect, language_list, language_name):
+        res_images = []
+        res_masks = []
+        res_labels = []
+
+        for item in image:
+            image_pil = Image.fromarray(np.clip(255.0 * item.cpu().numpy(), 0, 255).astype(np.uint8)).convert("RGB")
+
+            language = None
+            if detect == "choose":
+                language = get_classes2(language_list)
+            else:
+                language = get_classes(language_name)
+
+            model_storage_directory = os.path.join(folder_paths.models_dir, model_dir_name)
+            if not os.path.exists(model_storage_directory):
+                os.makedirs(model_storage_directory)
+
+            reader = easyocr.Reader(language, model_storage_directory=model_storage_directory, gpu=gpu)
+            result = reader.readtext(np.array(image_pil))
+
+            size = image_pil.size
+            pred_dict = {
+                "size": [size[1], size[0]],
+                "result": result,
+            }
+
+            image_tensor, mask_tensor, labelme_data = plot_boxes_to_image(image_pil, pred_dict)
+
+            # mask_tensor is a list of [1, H, W] tensors, one per detection.
+            # Combine them into a single [1, H, W] mask via element-wise max.
+            if len(mask_tensor) == 0:
+                combined = torch.zeros((1, size[1], size[0]), dtype=torch.float32)
+            else:
+                stacked = torch.cat(mask_tensor, dim=0)  # [N, H, W]
+                combined = stacked.max(dim=0, keepdim=True)[0]  # [1, H, W]
+
+            res_images.extend(image_tensor)
+            res_masks.append(combined)
+            res_labels.append(labelme_data)
+
+            if len(res_images) == 0:
+                res_images.extend(item)
+
+        return (
+            torch.cat(res_images, dim=0),
+            torch.cat(res_masks, dim=0),
+            res_labels,
+        )
